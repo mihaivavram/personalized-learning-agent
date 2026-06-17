@@ -1,0 +1,16 @@
+# Personalized Learning Agent — Python dependencies
+#
+# Core functionality (lib/send_email.py) uses only the Python standard library,
+# so NO third-party packages are required to run the agent.
+#
+# This file exists for optional extras. Install with:
+#     pip install -r requirements.txt
+#
+# ---------------------------------------------------------------------------
+# Optional: pure-pip PDF engine, so you don't need tectonic/wkhtmltopdf.
+# lib/to_pdf.sh auto-detects `weasyprint` if it is installed.
+# NOTE: weasyprint needs system libs (pango/cairo). On macOS: `brew install pango`;
+#       on Ubuntu: `sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0`.
+# Uncomment to enable:
+#
+# weasyprint>=62
