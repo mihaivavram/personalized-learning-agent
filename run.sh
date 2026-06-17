@@ -103,6 +103,7 @@ PDF_FILE="$OUTPUT_DIR/$RUN_ID.pdf"
 RAW_JSON="$OUTPUT_DIR/$RUN_ID.claude.json"
 ERR_FILE="$OUTPUT_DIR/$RUN_ID.stderr"
 MODEL="${CLAUDE_MODEL:-opus}"
+EFFORT="${CLAUDE_EFFORT:-low}"
 
 # --- Run state (for the structured record) ----------------------------------
 STEPS=""            # the "logic that was followed"
@@ -189,11 +190,11 @@ OUTPUT REQUIREMENTS:
 PROMPT_BYTES=${#PROMPT}
 
 # --- STEP: Research with claude (JSON output → markdown + token usage) -------
-log_step_n "Research with claude (model=$MODEL, effort=low)"
+log_step_n "Research with claude (model=$MODEL, effort=$EFFORT)"
 log_kv "input" "directive '$DIRECTIVE' (prompt ${PROMPT_BYTES} bytes)"
 if ! claude -p "$PROMPT" \
       --model "$MODEL" \
-      --effort low \
+      --effort "$EFFORT" \
       --allowedTools "WebSearch" "WebFetch" \
       --dangerously-skip-permissions \
       --output-format json \

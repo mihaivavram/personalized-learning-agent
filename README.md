@@ -85,6 +85,13 @@ Edit `.env` and set your SMTP values. For Gmail, `SENDER_PASSWORD` must be a 16-
 [App Password](https://support.google.com/accounts/answer/185833), not your login password.
 `.env` is gitignored.
 
+Optional Claude settings (see `.env.example`):
+
+- **`CLAUDE_MODEL`** — model for research (default: `opus`).
+- **`CLAUDE_EFFORT`** — effort level passed to `claude --effort` (default: `low`). Values:
+  `low`, `medium`, `high`, `xhigh`, `max`. Higher effort usually means deeper research and
+  higher token cost; use `low` for cron-friendly daily runs.
+
 ### 3. Make scripts executable (first time only)
 
 ```sh
@@ -169,8 +176,8 @@ for results.
   `WebSearch` and `WebFetch` (read-only web access), keeping the blast radius small.
 - **PDF is opt-in**: default runs produce only Markdown + an HTML-body email (no PDF, no
   attachment, no PDF-engine dependency). Add `--pdf` to render and attach a PDF.
-- **Model / "max effort"**: defaults to `--model opus` (most capable). Override with
-  `CLAUDE_MODEL` in `.env`.
+- **Model / effort**: defaults to `--model opus` and `--effort low`. Override with
+  `CLAUDE_MODEL` and `CLAUDE_EFFORT` in `.env` (e.g. `CLAUDE_EFFORT=max` for deeper research).
 - **Security**: `.env` holds your SMTP app password in plaintext (gitignored). Rotate it if
   it has been shared anywhere.
 ```
