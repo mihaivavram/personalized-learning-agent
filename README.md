@@ -38,7 +38,13 @@ Add your own by dropping a new `<name>.md` into `directives/`.
 
 ### 1. Dependencies
 
-Already required and assumed present: `claude` (CLI), `python3`, `pandoc`.
+Assumed already present: `claude` (CLI) and `python3`.
+
+**`pandoc` is required for every run** — it renders the Markdown report into the HTML email
+body (and, with `--pdf`, the PDF). Install it:
+
+- **macOS:** `brew install pandoc`
+- **Ubuntu/Debian:** `sudo apt-get install -y pandoc`
 
 A **PDF engine is only needed if you use `--pdf`** (the default run makes no PDF). When you
 want PDFs, `tectonic` is recommended (self-contained LaTeX):
