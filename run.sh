@@ -170,6 +170,23 @@ command -v pandoc >/dev/null 2>&1 || fail "preflight" \
 
 # --- Build the prompt envelope (framing + directive contents) ---------------
 DIRECTIVE_BODY="$(cat "$DIRECTIVE_FILE")"
+
+# Anti-repetition memory: pull topics already covered for THIS directive (from the
+# durable runs.jsonl) so the model can deliberately pick something different. Empty
+# on the first run / when there's no history. This optional step must never abort the
+# run, hence the '|| true'.
+RECENT_TOPICS="$("$PYTHON" "$LIB_DIR/runlog.py" recent --file "$RUNS_JSONL" --directive "$DIRECTIVE" --limit 20 2>/dev/null || true)"
+RECENT_COUNT=0
+AVOID_BLOCK=""
+if [[ -n "$RECENT_TOPICS" ]]; then
+  RECENT_COUNT="$(printf '%s\n' "$RECENT_TOPICS" | wc -l | tr -d ' ')"
+  AVOID_BLOCK="
+
+ALREADY COVERED RECENTLY — do NOT repeat any of these. These are recent daily editions
+of THIS directive; choose a clearly different topic and angle than every item below:
+$RECENT_TOPICS"
+fi
+
 PROMPT="You are a research assistant producing a daily digest. Today's date is $TODAY.
 
 Use web search and web fetch to gather the LATEST, most current and accurate information,
@@ -179,12 +196,14 @@ Follow this directive:
 
 --- DIRECTIVE START ---
 $DIRECTIVE_BODY
---- DIRECTIVE END ---
+--- DIRECTIVE END ---${AVOID_BLOCK}
 
 OUTPUT REQUIREMENTS:
 - Output ONLY the final report as clean GitHub-flavored Markdown. No preamble, no
   meta-commentary, no notes about your process.
-- Start with a single H1 title that includes today's date ($TODAY).
+- Start with a single H1 title that names the SPECIFIC topic AND includes today's date
+  ($TODAY), e.g. '# <Specific Topic> — $TODAY'. Avoid generic titles like 'Tip of the Day'
+  so each day is clearly distinct.
 - Use clear sections and concise bullets.
 - End with a '## Sources' section listing the URLs you used."
 PROMPT_BYTES=${#PROMPT}
@@ -192,6 +211,7 @@ PROMPT_BYTES=${#PROMPT}
 # --- STEP: Research with claude (JSON output → markdown + token usage) -------
 log_step_n "Research with claude (model=$MODEL, effort=$EFFORT)"
 log_kv "input" "directive '$DIRECTIVE' (prompt ${PROMPT_BYTES} bytes)"
+log_kv "avoid" "${RECENT_COUNT} recently-covered topic(s) excluded to prevent repeats"
 if ! claude -p "$PROMPT" \
       --model "$MODEL" \
       --effort "$EFFORT" \

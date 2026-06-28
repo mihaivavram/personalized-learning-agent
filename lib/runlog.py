@@ -12,8 +12,15 @@ Two subcommands, both driven by run.sh:
 """
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
+
+# Trailing date suffixes we strip from titles so the same topic on different days
+# collapses to one entry (e.g. "Idempotent Retries — 2026-06-17" -> "Idempotent Retries").
+_DATE_SUFFIX = re.compile(
+    r"\s*[\-–—(\[]*\s*\d{4}-\d{2}-\d{2}\s*[)\]]*\s*$"
+)
 
 
 def cmd_parse(args: argparse.Namespace) -> int:
@@ -95,6 +102,50 @@ def cmd_record(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_recent(args: argparse.Namespace) -> int:
+    """Print recently covered topic titles for a directive (most recent first).
+
+    Reads the durable runs.jsonl so the anti-repetition memory survives even if
+    output/*.md files are cleaned up. Prints nothing if there's no history yet.
+    """
+    path = Path(args.file)
+    if not path.exists():
+        return 0
+
+    titles: list[str] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if rec.get("directive") != args.directive:
+            continue
+        if rec.get("status") != "success":
+            continue
+        title = ((rec.get("output") or {}).get("title") or "").strip()
+        title = _DATE_SUFFIX.sub("", title).strip()
+        if title:
+            titles.append(title)
+
+    # Most recent last in the file -> reverse for most-recent-first, then dedupe
+    # (case-insensitively) while preserving order.
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for title in reversed(titles):
+        key = title.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        ordered.append(title)
+
+    for title in ordered[: max(0, args.limit)]:
+        print(f"- {title}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run-logging helpers.")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -125,6 +176,12 @@ def main() -> int:
     r.add_argument("--error-why", default="")
     r.add_argument("--error-fix", default="")
     r.set_defaults(func=cmd_record)
+
+    rc = sub.add_parser("recent", help="List recently covered topic titles for a directive.")
+    rc.add_argument("--file", required=True, help="Path to runs.jsonl")
+    rc.add_argument("--directive", required=True)
+    rc.add_argument("--limit", type=int, default=20)
+    rc.set_defaults(func=cmd_recent)
 
     args = parser.parse_args()
     return args.func(args)

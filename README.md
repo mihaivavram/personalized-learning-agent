@@ -184,6 +184,10 @@ for results.
   attachment, no PDF-engine dependency). Add `--pdf` to render and attach a PDF.
 - **Model / effort**: defaults to `--model opus` and `--effort low`. Override with
   `CLAUDE_MODEL` and `CLAUDE_EFFORT` in `.env` (e.g. `CLAUDE_EFFORT=max` for deeper research).
+- **Avoids repeats**: before each run, the agent reads the recent topic titles for that
+  directive from `logs/runs.jsonl` and instructs the model to pick a clearly different
+  topic (the last 20 by default), so daily editions don't keep returning the same tip.
+  Because this relies on the durable run log, keep `logs/runs.jsonl` around between runs.
 - **Security**: `.env` holds your SMTP app password in plaintext (gitignored). Rotate it if
   it has been shared anywhere.
 ```
